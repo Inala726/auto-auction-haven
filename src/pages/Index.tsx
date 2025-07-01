@@ -106,7 +106,7 @@ const Index = () => {
                   <Search className="h-5 w-5 mr-2" />
                   Browse Auctions
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-orange-600 px-8">
+                <Button size="lg" variant="outline" className="border-white text-orange-500 hover:text-orange-600 px-8">
                   How it Works
                 </Button>
               </div>
