@@ -22,8 +22,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // const BASE_URL = "http://localhost:8080"; 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,14 +33,14 @@ const Login = () => {
         payload
       );
 
-      // store JWT for later API calls
+      // Store JWT for later API calls
       localStorage.setItem("ACCESS_TOKEN", data.access_token);
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
 
-      // TODO: inspect roles in token or call /me to decide where to redirect
+      // Redirect to dashboard
       navigate("/dashboard");
     } catch (err: any) {
       toast({

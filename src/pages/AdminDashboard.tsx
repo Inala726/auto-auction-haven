@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Car, Plus, Edit, Trash2, Users, TrendingUp, DollarSign, Clock, LogOut, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  useAuthGuard(); // Protect this route
   const [showCreateAuction, setShowCreateAuction] = useState(false);
 
   const stats = {
@@ -123,7 +124,8 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    navigate('/');
+    localStorage.removeItem("ACCESS_TOKEN");
+    navigate('/login');
   };
 
   const getStatusColor = (status: string) => {

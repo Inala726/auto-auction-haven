@@ -29,8 +29,6 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const BASE_URL = "http://localhost:8080"; // Replace with your actual API base URL
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
@@ -55,17 +53,28 @@ const Signup = () => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        role: "ROLE_BIDDER", // or let user choose
+        role: "ROLE_BIDDER",
       };
       const { data } = await axios.post(
         "http://localhost:8080/api/v1/auth/register",
         payload
       );
-      toast({
-        title: "Success",
-        description: data.message,
-      });
-      navigate("/login");
+
+      // Store JWT token if provided
+      if (data.access_token) {
+        localStorage.setItem("ACCESS_TOKEN", data.access_token);
+        toast({
+          title: "Success",
+          description: "Account created successfully! Welcome to BidCars.",
+        });
+        navigate("/dashboard");
+      } else {
+        toast({
+          title: "Success",
+          description: data.message || "Account created successfully! Please login.",
+        });
+        navigate("/login");
+      }
     } catch (err: any) {
       toast({
         title: "Signup failed",

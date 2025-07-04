@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,12 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Car, Clock, Eye, Heart, TrendingUp, Trophy, Users, LogOut } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  useAuthGuard(); // Protect this route
+
   const [user] = useState({
     name: "John Doe",
-    email: "john@example.com",
+    email: "john@example.com", 
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
     joinDate: "March 2024",
     totalBids: 47,
@@ -102,7 +104,8 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    navigate('/');
+    localStorage.removeItem("ACCESS_TOKEN");
+    navigate('/login');
   };
 
   return (
