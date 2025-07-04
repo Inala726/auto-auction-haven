@@ -1,9 +1,15 @@
-
 import { useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Car, Eye, EyeOff } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -16,40 +22,49 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // const BASE_URL = "http://localhost:8080"; 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (email === "admin@bidcars.com" && password === "admin123") {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in as admin.",
-        });
-        navigate("/admin");
-      } else if (email && password) {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Error",
-          description: "Please enter valid credentials.",
-          variant: "destructive",
-        });
-      }
+    try {
+      const payload = { email, password };
+      const { data } = await axios.post(
+        "http://localhost:8080/api/v1/auth/login",
+        payload
+      );
+
+      // store JWT for later API calls
+      localStorage.setItem("ACCESS_TOKEN", data.access_token);
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+
+      // TODO: inspect roles in token or call /me to decide where to redirect
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast({
+        title: "Login failed",
+        description:
+          err.response?.data?.message ||
+          "Invalid credentials, please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 text-2xl font-bold text-gray-900 hover:text-orange-500 transition-colors">
+          <Link
+            to="/"
+            className="inline-flex items-center space-x-2 text-2xl font-bold text-gray-900 hover:text-orange-500 transition-colors"
+          >
             <Car className="h-8 w-8 text-orange-500" />
             <span>BidCars</span>
           </Link>
@@ -103,19 +118,28 @@ const Login = () => {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="remember" className="rounded border-gray-300" />
-                  <Label htmlFor="remember" className="text-sm text-gray-600">Remember me</Label>
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="remember" className="text-sm text-gray-600">
+                    Remember me
+                  </Label>
                 </div>
-                <Link to="/forgot-password" className="text-sm text-orange-500 hover:text-orange-600 transition-colors">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-orange-500 hover:text-orange-600 transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-orange-500 hover:bg-orange-600 transition-all duration-200"
                 disabled={isLoading}
               >
@@ -126,16 +150,13 @@ const Login = () => {
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Don't have an account?{" "}
-                <Link to="/signup" className="text-orange-500 hover:text-orange-600 font-medium transition-colors">
+                <Link
+                  to="/signup"
+                  className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                >
                   Sign up
                 </Link>
               </p>
-            </div>
-
-            <div className="mt-4 p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-gray-700 mb-2">Demo Credentials:</p>
-              <p className="text-xs text-gray-600">Admin: admin@bidcars.com / admin123</p>
-              <p className="text-xs text-gray-600">User: any email / any password</p>
             </div>
           </CardContent>
         </Card>
