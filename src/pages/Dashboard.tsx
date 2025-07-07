@@ -1,147 +1,151 @@
-import { useState } from "react";
+// src/pages/Dashboard.tsx
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Car, Clock, Eye, Heart, TrendingUp, Trophy, Users, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Car,
+  Clock,
+  LogOut,
+  Trophy,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
 
-const Dashboard = () => {
+interface UserDetailResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BidResponse {
+  id: number;
+  auctionId: number;
+  amount: number;
+  timestamp: string;
+}
+
+interface AuctionListResponse {
+  id: number;
+  carId: number;
+  make: string;
+  model: string;
+  currentBid: number;
+  endTime: string;
+  isClosed: boolean;
+}
+
+export default function Dashboard() {
   const navigate = useNavigate();
-  useAuthGuard(); // Protect this route
+  const token = localStorage.getItem("ACCESS_TOKEN") || "";
 
-  const [user] = useState({
-    name: "John Doe",
-    email: "john@example.com", 
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    joinDate: "March 2024",
-    totalBids: 47,
-    wonAuctions: 3,
-    watchlistCount: 12
-  });
+  // Profile
+  const [me, setMe] = useState<UserDetailResponse | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const activeBids = [
-    {
-      id: 1,
-      title: "2019 Porsche 911 GT3 RS",
-      currentBid: 185000,
-      yourBid: 180000,
-      timeLeft: "2d 14h",
-      status: "outbid",
-      image: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=300&h=200&fit=crop"
-    },
-    {
-      id: 2,
-      title: "1967 Ford Mustang Fastback",
-      currentBid: 75000,
-      yourBid: 75000,
-      timeLeft: "5d 8h",
-      status: "winning",
-      image: "https://images.unsplash.com/photo-1494905998402-395d579af36f?w=300&h=200&fit=crop"
-    },
-    {
-      id: 3,
-      title: "2021 Tesla Model S Plaid",
-      currentBid: 120000,
-      yourBid: 115000,
-      timeLeft: "1d 6h",
-      status: "outbid",
-      image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=300&h=200&fit=crop"
-    }
-  ];
+  // Active bids
+  const [activeBids, setActiveBids] = useState<BidResponse[]>([]);
+  // Won auctions
+  const [wonAuctions, setWonAuctions] = useState<BidResponse[]>([]);
+  // All open auctions
+  const [auctions, setAuctions] = useState<AuctionListResponse[]>([]);
 
-  const wonAuctions = [
-    {
-      id: 4,
-      title: "2020 BMW M4 Competition",
-      finalBid: 65000,
-      datePurchased: "Jan 15, 2024",
-      status: "completed",
-      image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=300&h=200&fit=crop"
-    },
-    {
-      id: 5,
-      title: "1995 Toyota Supra",
-      finalBid: 85000,
-      datePurchased: "Dec 8, 2023",
-      status: "completed",
-      image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=300&h=200&fit=crop"
-    }
-  ];
+  useEffect(() => {
+    // Fetch profile
+    axios
+      .get<UserDetailResponse>("http://localhost:8080/api/v1/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setMe(res.data))
+      .catch(() => setMe(null))
+      .finally(() => setLoadingProfile(false));
 
-  const watchlist = [
-    {
-      id: 6,
-      title: "2022 Lamborghini Huracan",
-      currentBid: 250000,
-      timeLeft: "3d 12h",
-      bids: 23,
-      image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=300&h=200&fit=crop"
-    },
-    {
-      id: 7,
-      title: "1973 Porsche 911 Carrera",
-      currentBid: 125000,
-      timeLeft: "6d 5h",
-      bids: 18,
-      image: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=300&h=200&fit=crop"
-    }
-  ];
+    // Active bids
+    axios
+      .get<BidResponse[]>("http://localhost:8080/api/v1/bids/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setActiveBids(res.data))
+      .catch(console.error);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "winning":
-        return "bg-green-500";
-      case "outbid":
-        return "bg-red-500";
-      case "completed":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
+    // Won auctions
+    axios
+      .get<BidResponse[]>("http://localhost:8080/api/v1/auctions/me/won", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setWonAuctions(res.data))
+      .catch(console.error);
+
+    // All open auctions
+    axios
+      .get<AuctionListResponse[]>("http://localhost:8080/api/v1/auctions", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setAuctions(res.data))
+      .catch(console.error);
+  }, [token]);
+
+  if (loadingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading…
+      </div>
+    );
+  }
+  if (!me) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        Failed to load profile.
+      </div>
+    );
+  }
+
+  const userName = `${me.firstName} ${me.lastName}`;
+  const joinDate = new Date(me.createdAt).toLocaleDateString();
 
   const handleLogout = () => {
     localStorage.removeItem("ACCESS_TOKEN");
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="border-b bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <Car className="h-8 w-8 text-orange-500" />
-              <span className="text-2xl font-bold text-gray-900">BidCars</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                Browse Auctions
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-gray-700">{user.name}</span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto flex justify-between items-center h-16 px-4">
+          <Link to="/" className="flex items-center space-x-2">
+            <Car className="h-8 w-8 text-orange-500" />
+            <span className="text-2xl font-bold text-gray-900">BidCars</span>
+          </Link>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>
-          <p className="text-gray-600">Manage your bids, track your wins, and discover new auctions.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {me.firstName}!
+          </h1>
+          <p className="text-gray-600">
+            Manage your bids, track your wins, and discover new auctions.
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -150,41 +154,58 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Bids</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeBids.length}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Active Bids
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {activeBids.length}
+                  </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Won Auctions</p>
-                  <p className="text-2xl font-bold text-gray-900">{user.wonAuctions}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Won Auctions
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {wonAuctions.length}
+                  </p>
                 </div>
                 <Trophy className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Watchlist</p>
-                  <p className="text-2xl font-bold text-gray-900">{user.watchlistCount}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Auctions
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {auctions.length}
+                  </p>
                 </div>
-                <Heart className="h-8 w-8 text-red-500" />
+                <Users className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Bids</p>
-                  <p className="text-2xl font-bold text-gray-900">{user.totalBids}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Bids
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0</p>
                 </div>
                 <Users className="h-8 w-8 text-blue-500" />
               </div>
@@ -192,148 +213,116 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Main Content */}
+        {/* Tabs */}
         <Tabs defaultValue="active-bids" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="active-bids">Active Bids</TabsTrigger>
             <TabsTrigger value="won-auctions">Won Auctions</TabsTrigger>
-            <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
+            <TabsTrigger value="auctions">Auctions</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="active-bids" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Bids</CardTitle>
-                <CardDescription>Track your current bidding activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activeBids.map((bid) => (
-                    <div key={bid.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex items-center space-x-4">
-                        <img src={bid.image} alt={bid.title} className="w-16 h-16 rounded-lg object-cover" />
-                        <div>
-                          <h3 className="font-semibold text-lg">{bid.title}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span>Your bid: ${bid.yourBid.toLocaleString()}</span>
-                            <span>Current: ${bid.currentBid.toLocaleString()}</span>
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {bid.timeLeft}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getStatusColor(bid.status)}>
-                          {bid.status === "winning" ? "Winning" : "Outbid"}
-                        </Badge>
-                        <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                          {bid.status === "outbid" ? "Increase Bid" : "View"}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Active Bids */}
+          <TabsContent value="active-bids" className="space-y-4">
+            {activeBids.map((b) => (
+              <Card key={b.id}>
+                <CardHeader>
+                  <CardTitle>Bid on #{b.auctionId}</CardTitle>
+                  <CardDescription>
+                    {new Date(b.timestamp).toLocaleString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-between">
+                  <span>${b.amount.toLocaleString()}</span>
+                  <Clock className="h-4 w-4 text-gray-500" />
+                </CardContent>
+              </Card>
+            ))}
           </TabsContent>
 
-          <TabsContent value="won-auctions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Won Auctions</CardTitle>
-                <CardDescription>Your successful auction wins</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {wonAuctions.map((auction) => (
-                    <div key={auction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <img src={auction.image} alt={auction.title} className="w-16 h-16 rounded-lg object-cover" />
-                        <div>
-                          <h3 className="font-semibold text-lg">{auction.title}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span>Final bid: ${auction.finalBid.toLocaleString()}</span>
-                            <span>Won on: {auction.datePurchased}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-500">Completed</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Won Auctions */}
+          <TabsContent value="won-auctions" className="space-y-4">
+            {wonAuctions.map((w) => (
+              <Card key={w.id}>
+                <CardHeader>
+                  <CardTitle>Won Auction #{w.auctionId}</CardTitle>
+                  <CardDescription>
+                    {new Date(w.timestamp).toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-between">
+                  <span>${w.amount.toLocaleString()}</span>
+                  <Trophy className="h-4 w-4 text-green-500" />
+                </CardContent>
+              </Card>
+            ))}
           </TabsContent>
 
-          <TabsContent value="watchlist" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Watchlist</CardTitle>
-                <CardDescription>Auctions you're interested in</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {watchlist.map((item) => (
-                    <div key={item.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      <img src={item.image} alt={item.title} className="w-full h-32 object-cover" />
-                      <div className="p-4">
-                        <h3 className="font-semibold mb-2">{item.title}</h3>
-                        <div className="flex justify-between items-center text-sm text-gray-600 mb-3">
-                          <span>Current: ${item.currentBid.toLocaleString()}</span>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {item.timeLeft}
-                          </div>
-                        </div>
-                        <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600">
-                          Place Bid
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* All Auctions */}
+          <TabsContent value="auctions" className="space-y-4">
+            {auctions.map((a) => (
+              <Card key={a.id}>
+                <CardHeader>
+                  <CardTitle>
+                    {a.make} {a.model}
+                  </CardTitle>
+                  <CardDescription>
+                    Ends {new Date(a.endTime).toLocaleString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-between items-center">
+                  <span>Current: ${a.currentBid.toLocaleString()}</span>
+                  <Button
+                    size="sm"
+                    className="bg-orange-500 hover:bg-orange-600"
+                    onClick={() => navigate(`/auctions/${a.id}`)}
+                  >
+                    Place Bid
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </TabsContent>
 
+          {/* Profile */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
                 <CardDescription>Manage your account details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-2">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="text-lg">{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    <AvatarFallback className="text-2xl">
+                      {me.firstName.charAt(0) + me.lastName.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-xl font-semibold">{user.name}</h3>
-                    <p className="text-gray-600">{user.email}</p>
-                    <p className="text-sm text-gray-500">Member since {user.joinDate}</p>
+                    <h3 className="text-xl font-semibold">{userName}</h3>
+                    <p className="text-gray-600">{me.email}</p>
+                    <p className="text-sm text-gray-500">
+                      Joined {joinDate}
+                    </p>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-orange-500">{user.totalBids}</p>
-                    <p className="text-sm text-gray-600">Total Bids</p>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <Badge className="mt-2">{me.status}</Badge>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-green-500">{user.wonAuctions}</p>
-                    <p className="text-sm text-gray-600">Auctions Won</p>
+                    <p className="text-sm text-gray-600">Created</p>
+                    <p>{joinDate}</p>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-500">{user.watchlistCount}</p>
-                    <p className="text-sm text-gray-600">Watchlist Items</p>
+                    <p className="text-sm text-gray-600">Last Update</p>
+                    <p>
+                      {new Date(me.updatedAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Edit Profile
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -341,6 +330,4 @@ const Dashboard = () => {
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
