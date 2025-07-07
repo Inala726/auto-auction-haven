@@ -1,3 +1,4 @@
+
 // src/pages/Dashboard.tsx
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -189,6 +190,13 @@ export default function Dashboard() {
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
+  };
+
+  const switchToBrowseAuctions = () => {
+    const browseTab = document.querySelector('[value="browse-auctions"]') as HTMLElement;
+    if (browseTab) {
+      browseTab.click();
+    }
   };
 
   const uniqueMakes = [...new Set(auctions.map(a => a.make))];
@@ -462,7 +470,7 @@ export default function Dashboard() {
                     <Gavel className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No active bids</h3>
                     <p className="text-gray-600 mb-4">Start bidding on auctions to see them here.</p>
-                    <Button onClick={() => document.querySelector('[value="browse-auctions"]')?.click()}>
+                    <Button onClick={switchToBrowseAuctions}>
                       Browse Auctions
                     </Button>
                   </div>
