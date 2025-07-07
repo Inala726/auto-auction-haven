@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -35,13 +36,36 @@ const Login = () => {
 
       // Store JWT for later API calls
       localStorage.setItem("ACCESS_TOKEN", data.access_token);
+      
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
 
-      // Redirect to dashboard
-      navigate("/dashboard");
+      // Check user role and redirect accordingly
+      try {
+        const userResponse = await axios.get(
+          "http://localhost:8080/api/v1/users/me",
+          {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          }
+        );
+        
+        // Check if user is admin based on role or email
+        const isAdmin = userResponse.data.role === 'admin' || 
+                       userResponse.data.email.includes('admin') ||
+                       userResponse.data.isAdmin === true;
+        
+        if (isAdmin) {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      } catch (roleCheckError) {
+        // If role check fails, default to regular dashboard
+        console.error("Failed to check user role:", roleCheckError);
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       toast({
         title: "Login failed",
