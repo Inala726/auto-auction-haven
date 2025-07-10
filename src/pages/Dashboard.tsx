@@ -173,7 +173,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("ACCESS_TOKEN");
-    navigate("/login");
+    navigate("/");
   };
 
   const getTimeRemaining = (endTime: string) => {

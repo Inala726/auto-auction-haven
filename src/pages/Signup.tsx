@@ -67,7 +67,8 @@ const Signup = () => {
           title: "Success",
           description: "Account created successfully! Welcome to BidCars.",
         });
-        navigate("/dashboard");
+        // Redirect based on user role (buyers go to landing page)
+        navigate("/");
       } else {
         toast({
           title: "Success",

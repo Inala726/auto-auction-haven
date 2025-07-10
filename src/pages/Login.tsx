@@ -51,20 +51,20 @@ const Login = () => {
           }
         );
         
-        // Check if user is admin based on role or email
-        const isAdmin = userResponse.data.role === 'admin' || 
-                       userResponse.data.email.includes('admin') ||
-                       userResponse.data.isAdmin === true;
-        
-        if (isAdmin) {
+        // Redirect based on user role
+        const userData = userResponse.data;
+        if (userData.role === 'admin' || userData.email.includes('admin') || userData.isAdmin === true) {
           navigate("/admin");
+        } else if (userData.role === 'seller') {
+          navigate("/seller-dashboard");
         } else {
-          navigate("/dashboard");
+          // Buyers go to landing page
+          navigate("/");
         }
       } catch (roleCheckError) {
-        // If role check fails, default to regular dashboard
+        // If role check fails, default to landing page for buyers
         console.error("Failed to check user role:", roleCheckError);
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (err: any) {
       toast({
